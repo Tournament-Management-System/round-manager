@@ -1,7 +1,8 @@
-const utils = require("./utils");
-const handlers = require("./handlers");
+import * as utils from "./utils.js";
+import * as handlers from "./handlers.js";
+import fetch from "node-fetch";
 
-exports.handler = async (event) => {
+export async function handler(event) {
   // TODO implement
   switch (event.path) {
     case "/startRounds":
@@ -9,6 +10,8 @@ exports.handler = async (event) => {
     case "/completeRound":
       return handlers.completeRound(event.body);
     default:
-      return utils.respBuilder(400, { error: `the path "${event.path}" does not exist` });
+      const response = await fetch("https://jsonplaceholder.typicode.com/todos/1");
+      const respJson = await response.json();
+      return utils.respBuilder(400, { error: `the path "${event.path}" does not exist`, respJson });
   }
-};
+}
