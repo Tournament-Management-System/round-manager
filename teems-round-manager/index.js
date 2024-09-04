@@ -1,12 +1,13 @@
 const utils = require("./utils");
+const handlers = require("./handlers");
 
 exports.handler = async (event) => {
   // TODO implement
   switch (event?.path) {
     case "/startRounds":
-      return utils.respBuilder(200, { path: "/startRounds" });
+      return handlers.startRounds(event);
     case "/completeRound":
-      return utils.respBuilder(200, { path: "/completeRound" });
+      return handlers.completeRound(event);
     default:
       return utils.respBuilder(400, { error: `the path "${event.path}" does not exist` });
   }
