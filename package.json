@@ -1,0 +1,14 @@
+{
+  "name": "round_manager_lambda",
+  "version": "1.0.0",
+  "main": "teems-round-manager/index.js",
+  "repository": "git@github.com:TournamentManagementSystem/round_manager_lambda.git",
+  "author": "Rohan Patel <rohanbpatel98@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.3.1"
+  }
+}
