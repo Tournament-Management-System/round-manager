@@ -48,6 +48,8 @@ Optimized to handle tournaments with 1000+ competitors, ensuring efficient resou
 
 ## Future Enhancements
 - [ ] Implement machine learning for optimal group assignments
+- [ ] Integrate with AI-powered judging systems
+- [ ] Enhance user interface for tournament setup and monitoring
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](link-to-license) file for details.
