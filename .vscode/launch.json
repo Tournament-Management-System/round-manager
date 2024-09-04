@@ -1,0 +1,10 @@
+{
+  "configurations": [
+    {
+      "command": "nvm use 16; yarn test",
+      "name": "Run yarn test",
+      "request": "launch",
+      "type": "node-terminal"
+    }
+  ]
+}

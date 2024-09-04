@@ -4,7 +4,7 @@ exports.handler = async (event) => {
   // TODO implement
   switch (event?.path) {
     case "/startRounds":
-      return utils.respBuilder(200, { path: "/startRound" });
+      return utils.respBuilder(200, { path: "/startRounds" });
     case "/completeRound":
       return utils.respBuilder(200, { path: "/completeRound" });
     default:
