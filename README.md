@@ -48,8 +48,6 @@ Optimized to handle tournaments with 1000+ competitors, ensuring efficient resou
 
 ## Future Enhancements
 - [ ] Implement machine learning for optimal group assignments
-- [ ] Add support for more complex tournament structures (e.g., double elimination)
-- [ ] Enhance real-time update capabilities for live tournament tracking
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](link-to-license) file for details.
