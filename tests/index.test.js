@@ -7,19 +7,19 @@ jest.mock("../teems-round-manager/utils");
 
 describe("aws lambda handler", () => {
   test("start rounds", async () => {
-    const eventBody = { path: "/startRounds" };
+    const eventBody = { path: "/startRounds", body: { tournamentStateId: "12345", eventFormatId: "12345" } };
     const startRoundsMock = jest.fn();
     handlers.startRounds.mockImplementation(startRoundsMock);
     await RoundManager.handler(eventBody);
-    expect(startRoundsMock).toHaveBeenCalledWith(eventBody);
+    expect(startRoundsMock).toHaveBeenCalledWith(eventBody.body);
   });
 
   test("complete rounds", async () => {
-    const eventBody = { path: "/completeRound" };
+    const eventBody = { path: "/completeRound", body: { tournamentStateId: "12345", eventFormatId: "12345" } };
     const completeRoundMock = jest.fn();
     handlers.completeRound.mockImplementation(completeRoundMock);
     await RoundManager.handler(eventBody);
-    expect(completeRoundMock).toHaveBeenCalledWith(eventBody);
+    expect(completeRoundMock).toHaveBeenCalledWith(eventBody.body);
   });
 
   test("invalid rounds", async () => {
