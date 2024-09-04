@@ -74,14 +74,6 @@ describe("startRounds", () => {
       })
     );
     const startGroupsMock = jest.fn(() => { });
-    const writeEventStateIdIntoTournamentStateMock = jest.fn((tournamentStateId, eventStateId) => ({
-      competitors: [],
-      eventFormatIds: "ef123",
-      id: tournamentStateId,
-      judges: [],
-      tournamentFormatId: "tf123",
-      tournamentStateEventStateId: eventStateId
-    }));
     const getTournamentStateOnlyMock = jest.fn(() => ({
       id: "ts123",
       judges: [],
@@ -97,7 +89,6 @@ describe("startRounds", () => {
     queries.createEventState.mockImplementation(createEventStateMock);
 
     queries.createRoundStateWithQueued.mockImplementation(createRoundStateMock);
-    queries.writeEventStateIdIntoTournamentState.mockImplementation(writeEventStateIdIntoTournamentStateMock);
 
     queries.startGroups.mockImplementation(startGroupsMock);
 
@@ -169,14 +160,6 @@ describe("startRounds", () => {
       })
     );
     const startGroupsMock = jest.fn(() => { });
-    const writeEventStateIdIntoTournamentStateMock = jest.fn((tournamentStateId, eventStateId) => ({
-      competitors: [],
-      eventFormatIds: "ef123",
-      id: tournamentStateId,
-      judges: [],
-      tournamentFormatId: "tf123",
-      tournamentStateEventStateId: eventStateId
-    }));
     const getTournamentStateOnlyMock = jest.fn(() => ({
       id: "ts123",
       tournamentStateEventStateId: "es123",
@@ -193,7 +176,6 @@ describe("startRounds", () => {
     queries.createEventState.mockImplementation(createEventStateMock);
 
     queries.createRoundStateWithQueued.mockImplementation(createRoundStateMock);
-    queries.writeEventStateIdIntoTournamentState.mockImplementation(writeEventStateIdIntoTournamentStateMock);
 
     queries.startGroups.mockImplementation(startGroupsMock);
 

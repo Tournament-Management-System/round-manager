@@ -26,10 +26,13 @@ export const startRounds = async (body) => {
   const queued = eventUtils.assignNextRound(eventFormat, eventState, competitors);
 
   if (queued?.length) {
-    const [roundState] = await Promise.all([
-      queries.createRoundStateWithQueued(tournamentFormatId, tournamentStateId, eventFormatId, eventState.id, queued),
-      queries.writeEventStateIdIntoTournamentState(tournamentStateId, eventState.id, tournamentState._version)
-    ]);
+    const roundState = await queries.createRoundStateWithQueued(
+      tournamentFormatId,
+      tournamentStateId,
+      eventFormatId,
+      eventState.id,
+      queued
+    );
 
     await queries.startGroups(roundState.id);
     return respBuilder(200, { roundState, eventState });

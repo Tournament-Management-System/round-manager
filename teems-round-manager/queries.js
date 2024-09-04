@@ -67,7 +67,7 @@ export const createRoundStateWithQueued = async (
 ) => {
     const queuedGroups = queued.map((round) => JSON.stringify(round));
     const query = `mutation CreateRoundState($eventFormatId: ID!, $tournamentFormatId: ID!, $tournamentStateId: ID!, $eventStateId: ID!, $emptyGroups: [AWSJSON], $queuedGroups: [AWSJSON]) {
-    createRoundState(input: {eventFormatId: $eventFormatId, tournamentFormatId: $tournamentFormatId, tournamentStateId: $tournamentStateId, eventstateID: $eventStateId, assigned: $emptyGroups, completed: $emptyGroups, started: $emptyGroups, queued: $queuedGroups}) {
+    createRoundState(input: {eventFormatId: $eventFormatId, tournamentFormatId: $tournamentFormatId, tournamentStateId: $tournamentStateId, eventStateId: $eventStateId, assigned: $emptyGroups, completed: $emptyGroups, started: $emptyGroups, queued: $queuedGroups}) {
       _deleted
       _version
       _lastChangedAt
@@ -76,7 +76,7 @@ export const createRoundStateWithQueued = async (
       started
       tournamentFormatId
       tournamentStateId
-      eventstateID
+      eventStateId
       eventFormatId
       completed
       assigned
@@ -98,27 +98,6 @@ export const createRoundStateWithQueued = async (
     return roundStateResponse?.data?.createRoundState;
 };
 
-export const writeEventStateIdIntoTournamentState = async (tournamentStateId, eventStateId, version) => {
-    const query = `mutation UpdateTournamentState($tournamentStateId: ID!, $eventStateId: ID!, $version: Int) {
-    updateTournamentState(input: {id: $tournamentStateId, tournamentStateEventStateId: $eventStateId, _version: $version}) {
-      _version
-      _lastChangedAt
-      _deleted
-      competitors
-      eventFormatIds
-      id
-      judges
-      tournamentFormatId
-      tournamentStateEventStateId
-    }
-  }`;
-    const variables = { tournamentStateId, eventStateId, version };
-    const tournamentStateResponse = await appSyncRequestMaker({ query, variables });
-    if (tournamentStateResponse.errorMsg || !tournamentStateResponse?.data?.updateTournamentState) {
-        return {};
-    }
-    return tournamentStateResponse?.data?.updateTournamentState;
-};
 export const getTournamentStateOnly = async (tournamentStateId) => {
     const query = `query GetTournamentState($tournamentStateId: ID!) {
     getTournamentState(id: $tournamentStateId) {
