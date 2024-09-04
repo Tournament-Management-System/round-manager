@@ -5,13 +5,12 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -19,11 +18,16 @@ jobs:
         node-version: [16.x]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: yarn install --frozen-lockfile 
-    - run: yarn test
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+      - name: Install core app dependencies
+        working-directory: ./teems-round-manager
+        run: yarn install --frozen-lockfile
+      - name: Install testing dependencies
+        run: yarn install --frozen-lockfile
+      - name: Running jest tests
+        run: yarn test
