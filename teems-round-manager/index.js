@@ -10,8 +10,6 @@ export async function handler(event) {
     case "/completeRound":
       return handlers.completeRound(event.body);
     default:
-      const response = await fetch("https://jsonplaceholder.typicode.com/todos/1");
-      const respJson = await response.json();
-      return utils.respBuilder(400, { error: `the path "${event.path}" does not exist`, respJson });
+      return utils.respBuilder(400, { error: `the path "${event.path}" does not exist` });
   }
 }

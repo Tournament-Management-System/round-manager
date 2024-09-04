@@ -1,5 +1,5 @@
-const handlers = require("../teems-round-manager/handlers");
-const queries = require("../teems-round-manager/queries");
+import * as handlers from "../teems-round-manager/handlers.js";
+import * as queries from "../teems-round-manager/queries.js";
 
 jest.mock("../teems-round-manager/queries");
 

@@ -1,6 +1,6 @@
-const RoundManager = require("../teems-round-manager/index");
-const handlers = require("../teems-round-manager/handlers");
-const utils = require("../teems-round-manager/utils");
+import * as RoundManager from "../teems-round-manager/index.js";
+import * as handlers from "../teems-round-manager/handlers.js";
+import * as utils from "../teems-round-manager/utils";
 
 jest.mock("../teems-round-manager/handlers");
 jest.mock("../teems-round-manager/utils");
