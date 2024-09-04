@@ -1,4 +1,4 @@
-export const assignNextRound = (eventFormat, eventState, competitors) => {
+export const assignNextRound = (eventFormat, eventState, competitors, roundState) => {
   const previousRoundIdx = eventState.currentRoundIdx;
 
   eventState.currentRoundIdx += 1;
@@ -12,16 +12,16 @@ export const assignNextRound = (eventFormat, eventState, competitors) => {
   let competitorsToAssign = competitors;
   if (previousRoundIdx > -1) {
     competitorsToAssign = getGroupRankings(
-      eventState.rounds,
-      eventState.previousRoundIdx,
+      roundState,
+      previousRoundIdx,
       eventFormat.rounds[previousRoundIdx].judgingCriteria
     );
   }
   return assignGroups(eventState, eventFormat, competitorsToAssign);
 };
 
-function assignGroups(eventState, eventMetaData, competitors) {
-  const roundMetaData = eventMetaData.rounds[eventState.currentRoundIdx];
+export function assignGroups(eventState, eventFormat, competitors) {
+  const roundMetaData = eventFormat.rounds[eventState.currentRoundIdx];
 
   if (roundMetaData.competitorLimit && roundMetaData.groupLimit) {
     const maxCompetitors = roundMetaData.competitorLimit * roundMetaData.groupLimit;
@@ -57,7 +57,7 @@ function assignGroups(eventState, eventMetaData, competitors) {
   }
 }
 
-function assignGroup(groupIdx, groupSize, competitorsToAssign) {
+export function assignGroup(groupIdx, groupSize, competitorsToAssign) {
   if (competitorsToAssign?.slice && groupSize) {
     const currentGroupCompetitor = competitorsToAssign.slice(0, groupSize);
     for (let shiftIdx = 0; shiftIdx < groupSize; shiftIdx++) {
@@ -76,12 +76,13 @@ function assignGroup(groupIdx, groupSize, competitorsToAssign) {
       judges: [],
       competitors: currentGroupCompetitor,
       ranking,
-      comments
+      comments,
+      roomId: null
     };
   }
 }
 
-function getGroupRankings(roundInfo, roundIdx, judgingCriteria) {
+export function getGroupRankings(roundInfo, roundIdx, judgingCriteria) {
   if (judgingCriteria) {
     if (judgingCriteria === "highest_this_round") {
       return getRankFromRoundInfo(roundInfo, roundIdx);
@@ -93,10 +94,10 @@ function getGroupRankings(roundInfo, roundIdx, judgingCriteria) {
   return getRankFromRoundInfo(roundInfo);
 }
 
-export function tabulateEventResults(eventMetaData, eventState) {
-  if (eventMetaData?.awards && eventState?.rounds) {
+export function tabulateEventResults(eventFormat, eventState) {
+  if (eventFormat?.awards && eventState?.rounds) {
     const roundInfo = eventState.rounds;
-    eventState.awards = [...(eventMetaData?.awards ?? [])];
+    eventState.awards = [...(eventFormat?.awards ?? [])];
     eventState.awards.forEach((award) => {
       let competitorRankingAward = [];
       if (award.awardCriteria === "highest_last_round") {
@@ -112,7 +113,7 @@ export function tabulateEventResults(eventMetaData, eventState) {
   }
 }
 
-function getRankFromRoundInfo(roundInfo, roundIdx) {
+export function getRankFromRoundInfo(roundInfo, roundIdx) {
   if (roundInfo) {
     const competitorMap = {};
     if (roundIdx !== null && roundIdx !== undefined) {
@@ -131,7 +132,7 @@ function getRankFromRoundInfo(roundInfo, roundIdx) {
   }
 }
 
-function computeCompetitorMap(competitors, ranking, competitorMap) {
+export function computeCompetitorMap(competitors, ranking, competitorMap) {
   if (competitorMap && ranking && competitors?.forEach) {
     competitors.forEach((competitor) => {
       if (!competitorMap[competitor]) competitorMap[competitor] = 0;

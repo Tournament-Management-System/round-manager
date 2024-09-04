@@ -1,7 +1,7 @@
 {
   "configurations": [
     {
-      "command": "nvm use 16; yarn test",
+      "command": "nvm use 16; yarn test ./tests/queryCalls.test.js",
       "name": "Run yarn test",
       "request": "launch",
       "type": "node-terminal"

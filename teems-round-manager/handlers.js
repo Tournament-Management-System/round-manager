@@ -12,18 +12,33 @@ export const startRounds = async (body) => {
   const [eventFormat, competitors, tournamentState] = await Promise.all([
     queries.getEventFormat(eventFormatId),
     queries.getEventCompetitors(eventFormatId),
-    queries.getTournamentStateOnly(tournamentStateId)
+    queries.getTournamentStateEventStates(tournamentStateId)
   ]);
 
-  if (tournamentState.tournamentStateEventStateId) {
+  const { tournamentFormatId } = tournamentState;
+  const eventStateInTournamentState = tournamentState?.eventState?.items?.find?.(
+    (_eventState) => _eventState.eventFormatId === eventFormatId
+  );
+  if (eventStateInTournamentState) {
     return respBuilder(400, {
-      error: `event state has been initiated with ID "${tournamentState.tournamentStateEventStateId}"`
+      error: `eventFormatId "${eventFormatId}" has been initiated with eventStateId "${eventStateInTournamentState.id}"`
     });
   }
 
-  const { tournamentFormatId } = eventFormat;
-  const eventState = await queries.createEventState(tournamentFormatId, tournamentStateId, eventFormatId);
-  const queued = eventUtils.assignNextRound(eventFormat, eventState, competitors);
+  const rawEventState = {
+    tournamentFormatId,
+    tournamentStateId,
+    eventFormatId,
+    currentRoundIdx: -1,
+    awards: []
+  };
+  const queued = eventUtils.assignNextRound(eventFormat, rawEventState, competitors);
+  const eventState = await queries.createEventState(
+    rawEventState.tournamentFormatId,
+    rawEventState.tournamentStateId,
+    rawEventState.eventFormatId,
+    rawEventState.currentRoundIdx
+  );
 
   if (queued?.length) {
     const roundState = await queries.createRoundStateWithQueued(
@@ -41,6 +56,43 @@ export const startRounds = async (body) => {
   }
 };
 
-export const completeRound = () => {
-  return respBuilder(200, "/completeRound");
+export const completeRound = async (body) => {
+  if (!body) return respBuilder(400, { error: `invalid request body - missing body` });
+  if (!body.roundStateId) return respBuilder(400, { error: `invalid request body - missing roundStateId` });
+
+  const roundState = await queries.getRoundState(body.roundStateId);
+  if (roundState.queued?.length !== 0 || roundState?.assigned?.length !== 0 || roundState?.started?.length !== 0) {
+    return respBuilder(400, { error: "round not finished - not all groups have completed" });
+  }
+
+  const [eventState, eventFormat] = await Promise.all([
+    queries.getEventState(roundState.eventStateId),
+    queries.getEventFormat(roundState.eventFormatId)
+  ]);
+
+  if (eventState.currentRoundIdx === eventFormat.rounds.length - 1) {
+    const awards = eventUtils.tabulateEventResults(eventFormat, eventState);
+    const newEventState = await queries.updateEventStateAward(roundState.id, awards, eventState._version);
+    await queries.completeEvent(roundState.eventFormatId, roundState.eventStateId);
+    return respBuilder(200, { roundState, eventState: newEventState });
+  } else {
+    const [competitors, eventRoundStates] = await Promise.all([
+      queries.getEventCompetitors(roundState.eventFormatId),
+      queries.getEventStateRoundStates(roundState.eventStateId)
+    ]);
+
+    const queued = eventUtils.assignNextRound(eventFormat, eventState, competitors, eventRoundStates);
+    if (queued?.length) {
+      const nextRoundState = await queries.createRoundStateWithQueued(
+        roundState.tournamentFormatId,
+        roundState.tournamentStateId,
+        roundState.eventFormatId,
+        roundState.eventStateId,
+        queued
+      );
+      await queries.startGroups(nextRoundState.id);
+      return respBuilder(200, { roundState: nextRoundState, eventState });
+    }
+    return respBuilder(400, { error: `unable to make assignment, queued is "${queued}"` });
+  }
 };
