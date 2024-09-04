@@ -52,4 +52,4 @@ Optimized to handle tournaments with 1000+ competitors, ensuring efficient resou
 - [ ] Enhance user interface for tournament setup and monitoring
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](link-to-license) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/Tournament-Management-System/round-manager/blob/main/LICENSE) file for details.
