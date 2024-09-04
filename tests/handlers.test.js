@@ -52,44 +52,61 @@ const eventFormatMock = {
 describe("startRounds", () => {
   test("initial round", async () => {
     const getEventFormatMock = jest.fn(() => eventFormatMock);
-    const createEventStateMock = jest.fn((tournamentFormatId, tournamentStateId, eventFormatId) => ({
-      eventFormatId,
-      tournamentFormatId,
-      tournamentStateId,
-      awards: [],
-      currentRoundIdx: -1,
-      eventStateRoundStateId: undefined
-    }));
     const getEventCompetitorsMock = jest.fn(() => ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11"]);
-    const createRoundStateMock = jest.fn((tournamentFormatId, tournamentStateId, eventFormatId, eventStateId) => ({
-      tournamentFormatId,
-      tournamentStateId,
+    const createEventStateMock = jest.fn((tournamentFormatId, tournamentStateId, eventFormatId) => ({
+      id: "es123",
       eventFormatId,
-      eventStateId,
-      assigned: [],
-      started: [],
-      completed: [],
-      queued: []
+      currentRoundIdx: -1,
+      awards: [],
+      tournamentFormatId,
+      tournamentStateId
     }));
-    const writeRoundStateMock = jest.fn((roundState) => roundState);
-    const startGroupsMock = jest.fn(() => {});
-    const updateTournamentStateEventStateIdMock = jest.fn(() => {});
-    const updateEventStateRoundStateIdMock = jest.fn(() => {});
+    const createRoundStateMock = jest.fn(
+      (tournamentFormatId, tournamentStateId, eventFormatId, eventStateId, queued) => ({
+        tournamentFormatId,
+        tournamentStateId,
+        eventFormatId,
+        eventStateId,
+        assigned: [],
+        started: [],
+        completed: [],
+        queued
+      })
+    );
+    const startGroupsMock = jest.fn(() => { });
+    const writeEventStateIdIntoTournamentStateMock = jest.fn((tournamentStateId, eventStateId) => ({
+      competitors: [],
+      eventFormatIds: "ef123",
+      id: tournamentStateId,
+      judges: [],
+      tournamentFormatId: "tf123",
+      tournamentStateEventStateId: eventStateId
+    }));
+    const getTournamentStateOnlyMock = jest.fn(() => ({
+      id: "ts123",
+      judges: [],
+      tournamentFormatId: "tf123",
+      competitors: [],
+      eventFormatIds: ["ef123"]
+    }));
 
     queries.getEventFormat.mockImplementation(getEventFormatMock);
-    queries.createEventState.mockImplementation(createEventStateMock);
     queries.getEventCompetitors.mockImplementation(getEventCompetitorsMock);
-    queries.createRoundState.mockImplementation(createRoundStateMock);
-    queries.writeRoundState.mockImplementation(writeRoundStateMock);
-    queries.startGroups.mockImplementation(startGroupsMock);
-    queries.updateTournamentStateEventStateId.mockImplementation(updateTournamentStateEventStateIdMock);
-    queries.updateEventStateRoundStateId.mockImplementation(updateEventStateRoundStateIdMock);
+    queries.getTournamentStateOnly.mockImplementation(getTournamentStateOnlyMock);
 
-    const { statusCode, body } = await handlers.startRounds({ tournamentStateId: "ts123", eventFormatId: "ef123" });
-    expect(JSON.parse(body)).toEqual({
+    queries.createEventState.mockImplementation(createEventStateMock);
+
+    queries.createRoundStateWithQueued.mockImplementation(createRoundStateMock);
+    queries.writeEventStateIdIntoTournamentState.mockImplementation(writeEventStateIdIntoTournamentStateMock);
+
+    queries.startGroups.mockImplementation(startGroupsMock);
+
+    const response = await handlers.startRounds({ tournamentStateId: "ts123", eventFormatId: "ef123" });
+    expect(JSON.parse(response.body)).toEqual({
       roundState: {
         tournamentStateId: "ts123",
         eventFormatId: "ef123",
+        eventStateId: "es123",
         assigned: [],
         started: [],
         completed: [],
@@ -124,8 +141,64 @@ describe("startRounds", () => {
           }
         ]
       },
-      eventState: { eventFormatId: "ef123", tournamentStateId: "ts123", awards: [], currentRoundIdx: 0 }
+      eventState: { id: "es123", eventFormatId: "ef123", tournamentStateId: "ts123", awards: [], currentRoundIdx: 0 }
     });
+  });
+
+  test("initiating an event that already has an event state", async () => {
+    const getEventFormatMock = jest.fn(() => eventFormatMock);
+    const getEventCompetitorsMock = jest.fn(() => ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11"]);
+    const createEventStateMock = jest.fn((tournamentFormatId, tournamentStateId, eventFormatId) => ({
+      id: "es123",
+      eventFormatId,
+      currentRoundIdx: -1,
+      awards: [],
+      tournamentFormatId,
+      tournamentStateId
+    }));
+    const createRoundStateMock = jest.fn(
+      (tournamentFormatId, tournamentStateId, eventFormatId, eventStateId, queued) => ({
+        tournamentFormatId,
+        tournamentStateId,
+        eventFormatId,
+        eventStateId,
+        assigned: [],
+        started: [],
+        completed: [],
+        queued
+      })
+    );
+    const startGroupsMock = jest.fn(() => { });
+    const writeEventStateIdIntoTournamentStateMock = jest.fn((tournamentStateId, eventStateId) => ({
+      competitors: [],
+      eventFormatIds: "ef123",
+      id: tournamentStateId,
+      judges: [],
+      tournamentFormatId: "tf123",
+      tournamentStateEventStateId: eventStateId
+    }));
+    const getTournamentStateOnlyMock = jest.fn(() => ({
+      id: "ts123",
+      tournamentStateEventStateId: "es123",
+      judges: [],
+      tournamentFormatId: "tf123",
+      competitors: [],
+      eventFormatIds: ["ef123"]
+    }));
+
+    queries.getEventFormat.mockImplementation(getEventFormatMock);
+    queries.getEventCompetitors.mockImplementation(getEventCompetitorsMock);
+    queries.getTournamentStateOnly.mockImplementation(getTournamentStateOnlyMock);
+
+    queries.createEventState.mockImplementation(createEventStateMock);
+
+    queries.createRoundStateWithQueued.mockImplementation(createRoundStateMock);
+    queries.writeEventStateIdIntoTournamentState.mockImplementation(writeEventStateIdIntoTournamentStateMock);
+
+    queries.startGroups.mockImplementation(startGroupsMock);
+
+    const response = await handlers.startRounds({ tournamentStateId: "ts123", eventFormatId: "ef123" });
+    expect(JSON.parse(response.body)).toEqual({ error: 'event state has been initiated with ID "es123"' });
   });
   test("missing body", async () => {
     const { statusCode } = await handlers.startRounds();
@@ -147,4 +220,4 @@ describe("startRounds", () => {
   });
 });
 
-describe("completeRound", () => {});
+describe("completeRound", () => { });
