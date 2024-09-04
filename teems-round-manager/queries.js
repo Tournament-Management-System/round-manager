@@ -1,4 +1,4 @@
-import { appSyncRequestMaker } from "./utils.js";
+import { appSyncRequestMaker, roundMngrRequestMaker, tournamentMngrRequestMaker } from "./utils.js";
 
 export const getEventFormat = async (eventFormatId) => {
   const query = `query QueryEventFormat($eventFormatId: ID!) {
@@ -27,8 +27,8 @@ export const getEventFormat = async (eventFormatId) => {
     return {};
   }
   const eventFormatData = { ...(eventFormatResponse?.data?.getEventFormat ?? {}) };
-  eventFormatData.awards = eventFormatData.awards.map((award) => JSON.parse(award));
-  eventFormatData.rounds = eventFormatData.rounds.map((round) => JSON.parse(round));
+  eventFormatData.awards = eventFormatData.awards.map((award) => JSON.parse(award))[0];
+  eventFormatData.rounds = eventFormatData.rounds.map((round) => JSON.parse(round))[0];
   return eventFormatData;
 };
 
@@ -209,6 +209,41 @@ export const getEventState = async (eventStateId) => {
   return eventState;
 };
 
+export const getEventStateWithRounds = async (eventStateId) => {
+  const query = `query GetEventState($eventStateId: ID!) {
+    getEventState(id: $eventStateId) {
+      _deleted
+      _lastChangedAt
+      _version
+      awards
+      currentRoundIdx
+      eventFormatId
+      id
+      tournamentFormatId
+      tournamentStateId
+      roundState {
+        items {
+          completed
+          createdAt
+        }
+      }
+    }
+  }`;
+  const variables = { eventStateId };
+  const eventStateResponse = await appSyncRequestMaker({ query, variables });
+  if (eventStateResponse.errorMsg || !eventStateResponse?.data?.getEventState) {
+    return {};
+  }
+  const eventState = { ...(eventStateResponse?.data?.getEventState ?? {}) };
+  if (eventState?.awards?.map) eventState.awards = eventState.awards.map((award) => JSON.parse(award));
+  if (eventState?.roundState?.items?.map)
+    eventState.roundState.items = eventState.roundState.items.map((round) => ({
+      ...round,
+      completed: round?.completed?.map?.((json) => JSON.parse(json))
+    }));
+  return eventState;
+};
+
 export const updateEventStateAward = async (eventStateId, awardStrings, version) => {
   const awards = awardStrings.map((awardString) => JSON.stringify(awardString));
   const query = `mutation UpdateEventState($eventStateId: ID!, $awards: [AWSJSON], $version: Int) {
@@ -227,6 +262,32 @@ export const updateEventStateAward = async (eventStateId, awardStrings, version)
   const variables = { eventStateId, awards, version };
   const eventStateResponse = await appSyncRequestMaker({ query, variables });
   if (eventStateResponse.errorMsg || !eventStateResponse?.data?.updateEventState) {
+    console.log(eventStateResponse);
+    return {};
+  }
+  const eventState = { ...(eventStateResponse?.data?.updateEventState ?? {}) };
+  if (eventState?.awards?.map) eventState.awards = eventState.awards.map((award) => JSON.parse(award));
+  return eventState;
+};
+
+export const updateEventStateIndex = async (eventStateId, currentRoundIdx, version) => {
+  const query = `mutation UpdateEventState($eventStateId: ID!, $currentRoundIdx: Int, $version: Int) {
+    updateEventState(input: {id: $eventStateId, _version: $version, currentRoundIdx: $currentRoundIdx}) {
+      _deleted
+      _lastChangedAt
+      _version
+      awards
+      currentRoundIdx
+      eventFormatId
+      id
+      tournamentFormatId
+      tournamentStateId
+    }
+  }`;
+  const variables = { eventStateId, currentRoundIdx, version };
+  const eventStateResponse = await appSyncRequestMaker({ query, variables });
+  if (eventStateResponse.errorMsg || !eventStateResponse?.data?.updateEventState) {
+    console.log("ERROR:", eventStateResponse, variables);
     return {};
   }
   const eventState = { ...(eventStateResponse?.data?.updateEventState ?? {}) };
@@ -242,6 +303,7 @@ export const getEventStateRoundStates = async (eventStateId) => {
           _version
           _lastChangedAt
           _deleted
+          createdAt
           assigned
           completed
           eventFormatId
@@ -262,7 +324,7 @@ export const getEventStateRoundStates = async (eventStateId) => {
   }
   const roundStates = [...(eventStateResponse?.data?.getEventState?.roundState?.items ?? [])];
   return roundStates
-    .filter((roundState) => roundState !== true)
+    .filter((roundState) => roundState !== true && roundState?._deleted !== true)
     .map((roundState) => ({
       ...roundState,
       queued: roundState?.queued?.map?.((group) => JSON.parse(group)) ?? roundState.queued,
@@ -272,8 +334,40 @@ export const getEventStateRoundStates = async (eventStateId) => {
     }));
 };
 
-export const startGroups = async (roundId) => {};
-export const getEventCompetitors = async (eventFormatId) => {
-  return ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "ca", "cb", "cc", "cd", "ce", "cf", "cg", "c0", "ch"];
+export const startGroups = async (roundStateId) => {
+  const startGroupsResp = await roundMngrRequestMaker("startGroup", {
+    roundStateId
+  });
+  return startGroupsResp;
 };
-export const completeEvent = async (eventFormatId, eventStateId) => {};
+
+export const getEventCompetitors = async (tournamentFormatId, eventFormatId) => {
+  const query = `
+  query getEventCompetitor {
+    getTournamentFormat(id: "${tournamentFormatId}") {
+      competitionEntries(filter: {eventFormatIds: {eq: "${eventFormatId}"}}) {
+        items {
+          id
+        }
+      }
+    }
+  }`;
+  const eventCompetitorResponse = await appSyncRequestMaker({ query });
+  if (
+    eventCompetitorResponse.errorMsg ||
+    !eventCompetitorResponse?.data?.getTournamentFormat?.competitionEntries?.items
+  ) {
+    return [];
+  }
+  const competitorEntryId = eventCompetitorResponse.data.getTournamentFormat.competitionEntries.items.map(
+    (entries) => entries.id
+  );
+  return competitorEntryId;
+};
+
+export const completeEvent = async (eventStateId) => {
+  const eventCompResp = await tournamentMngrRequestMaker("/completeEvent", {
+    eventStateId
+  });
+  return eventCompResp;
+};

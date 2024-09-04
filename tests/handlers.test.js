@@ -262,6 +262,14 @@ describe("completeRound", () => {
       tournamentFormatId: "ef123",
       tournamentStateId: "es123"
     }));
+    const updateEventStateIndexMock = jest.fn((eventStateId, currentRoundIdx, version) => ({
+      awards: [],
+      currentRoundIdx,
+      eventFormatId: "ef123",
+      id: eventStateId,
+      tournamentFormatId: "tf123",
+      tournamentStateId: "ts123"
+    }));
     const getEventCompetitorsMock = jest.fn(() => ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11"]);
     const createRoundStateMock = jest.fn(
       (tournamentFormatId, tournamentStateId, eventFormatId, eventStateId, queued) => ({
@@ -313,11 +321,23 @@ describe("completeRound", () => {
         ]
       }
     ]);
-
+    const getEventStateWithRoundsMock = jest.fn(() => ({
+      awards: [],
+      currentRoundIdx: 0,
+      eventFormatId: "ef123",
+      id: "es123",
+      tournamentFormatId: "tf123",
+      tournamentStateId: "ts123",
+      roundState: {
+        items: []
+      }
+    }));
+    queries.getEventStateWithRounds.mockImplementation(getEventStateWithRoundsMock);
     queries.getRoundState.mockImplementation(getRoundStateMock);
     queries.getEventFormat.mockImplementation(getEventFormatMock);
     queries.getEventState.mockImplementation(getEventStateMock);
     queries.updateEventStateAward.mockImplementation(updateEventStateAwardMock);
+    queries.updateEventStateIndex.mockImplementation(updateEventStateIndexMock);
     queries.getEventCompetitors.mockImplementation(getEventCompetitorsMock);
     queries.createRoundStateWithQueued.mockImplementation(createRoundStateMock);
     queries.getEventStateRoundStates.mockImplementation(getEventStateRoundStatesMock);
@@ -452,6 +472,18 @@ describe("completeRound", () => {
         id: "rs234"
       })
     );
+    const getEventStateWithRoundsMock = jest.fn(() => ({
+      awards: [],
+      currentRoundIdx: 0,
+      eventFormatId: "ef123",
+      id: "es123",
+      tournamentFormatId: "tf123",
+      tournamentStateId: "ts123",
+      roundState: {
+        items: []
+      }
+    }));
+    queries.getEventStateWithRounds.mockImplementation(getEventStateWithRoundsMock);
 
     queries.getRoundState.mockImplementation(getRoundStateMock);
     queries.getEventFormat.mockImplementation(getEventFormatMock);
@@ -461,7 +493,50 @@ describe("completeRound", () => {
     queries.createRoundStateWithQueued.mockImplementation(createRoundStateMock);
 
     const response = await handlers.completeRound({ roundStateId: "rs123" });
-    expect(JSON.parse(response.body)).toEqual({ error: "round not finished - not all groups have completed" });
+    expect(JSON.parse(response.body)).toEqual({
+      error: "round not finished - not all groups have completed",
+      roundState: {
+        assigned: [
+          {
+            groupId: 0,
+            judges: [],
+            competitors: ["c1", "c2", "c3"],
+            ranking: { c1: null, c2: null, c3: null },
+            comments: { c1: null, c2: null, c3: null }
+          }
+        ],
+        completed: [
+          {
+            groupId: 1,
+            judges: [],
+            competitors: ["c4", "c5", "c6"],
+            ranking: { c4: 1, c5: 2, c6: 3 },
+            comments: { c4: null, c5: null, c6: null }
+          },
+          {
+            groupId: 2,
+            judges: [],
+            competitors: ["c7", "c8", "c9"],
+            ranking: { c7: 1, c8: 2, c9: 3 },
+            comments: { c7: null, c8: null, c9: null }
+          },
+          {
+            groupId: 3,
+            judges: [],
+            competitors: ["c10", "c11"],
+            ranking: { c10: 1, c11: 2 },
+            comments: { c10: null, c11: null }
+          }
+        ],
+        eventFormatId: "ef123",
+        eventStateId: "es123",
+        id: "rs123",
+        queued: [],
+        started: [],
+        tournamentFormatId: "tf123",
+        tournamentStateId: "ts123"
+      }
+    });
   });
 
   test("missing body", async () => {

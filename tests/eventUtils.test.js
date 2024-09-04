@@ -115,8 +115,8 @@ describe("getRankFromRoundInfo", () => {
     expect(ranking).toEqual(["cid6", "cid5", "cid4", "cid3", "cid2", "cid1"]);
   });
   test("getting rank where there is 2 rounds but asks for 1", () => {
-    const roundInfo = {
-      1: {
+    const roundInfo = [
+      {
         completed: [
           {
             competitors: ["cid1", "cid2", "cid3"],
@@ -134,9 +134,11 @@ describe("getRankFromRoundInfo", () => {
               cid6: 6
             }
           }
-        ]
+        ],
+        createdAt: "2023-03-05T19:11:27.842Z"
       },
-      2: {
+      {
+        createdAt: "2023-03-05T19:11:27.842Z",
         completed: [
           {
             competitors: ["cid7", "cid8", "cid9"],
@@ -148,9 +150,9 @@ describe("getRankFromRoundInfo", () => {
           }
         ]
       }
-    };
+    ];
     const ranking = getRankFromRoundInfo(roundInfo, 1);
-    expect(ranking).toEqual(["cid6", "cid5", "cid4", "cid3", "cid2", "cid1"]);
+    expect(ranking).toEqual(["cid9", "cid8", "cid7"]);
   });
 
   test("getting rank where there is 2 rounds but asks for all", () => {
@@ -247,8 +249,9 @@ describe("getRankFromRoundInfo", () => {
 describe("getGroupRankings", () => {
   test("get group ranking from 2 rounds", () => {
     const eventState = {
-      rounds: {
-        0: {
+      rounds: [
+        {
+          createdAt: "2023-03-05T19:11:27.842Z",
           completed: [
             {
               competitors: ["cid1", "cid2", "cid3"],
@@ -268,7 +271,8 @@ describe("getGroupRankings", () => {
             }
           ]
         },
-        1: {
+        {
+          createdAt: "2023-03-05T19:12:27.842Z",
           completed: [
             {
               competitors: ["cid1", "cid2", "cid3"],
@@ -288,7 +292,7 @@ describe("getGroupRankings", () => {
             }
           ]
         }
-      }
+      ]
     };
     expect(getGroupRankings(eventState.rounds, 1, "highest_this_round")).toEqual([
       "cid1",

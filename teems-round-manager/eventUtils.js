@@ -22,7 +22,6 @@ export const assignNextRound = (eventFormat, eventState, competitors, roundState
 
 export function assignGroups(eventState, eventFormat, competitors) {
   const roundMetaData = eventFormat.rounds[eventState.currentRoundIdx];
-
   if (roundMetaData.competitorLimit && roundMetaData.groupLimit) {
     const maxCompetitors = roundMetaData.competitorLimit * roundMetaData.groupLimit;
     let competitorsToAssign = competitors.slice(0, maxCompetitors);
@@ -83,20 +82,15 @@ export function assignGroup(groupIdx, groupSize, competitorsToAssign) {
 }
 
 export function getGroupRankings(roundInfo, roundIdx, judgingCriteria) {
-  if (judgingCriteria) {
-    if (judgingCriteria === "highest_this_round") {
-      return getRankFromRoundInfo(roundInfo, roundIdx);
-    }
-    if (judgingCriteria === "highest_all_round") {
-      return getRankFromRoundInfo(roundInfo);
-    }
+  if (judgingCriteria === "highest_this_round") {
+    return getRankFromRoundInfo(roundInfo, roundIdx);
   }
   return getRankFromRoundInfo(roundInfo);
 }
 
 export function tabulateEventResults(eventFormat, eventState) {
-  if (eventFormat?.awards && eventState?.rounds) {
-    const roundInfo = eventState.rounds;
+  if (eventFormat?.awards && eventState?.roundState) {
+    const roundInfo = eventState.roundState.items;
     eventState.awards = [...(eventFormat?.awards ?? [])];
     eventState.awards.forEach((award) => {
       let competitorRankingAward = [];
@@ -117,9 +111,12 @@ export function getRankFromRoundInfo(roundInfo, roundIdx) {
   if (roundInfo) {
     const competitorMap = {};
     if (roundIdx !== null && roundIdx !== undefined) {
-      roundInfo[roundIdx].completed.forEach((group) => {
+      const roundInfoSorted = [...roundInfo];
+      roundInfoSorted.sort((a, b) => (new Date(a.createdAt) < new Date(b.createdAt) ? -1 : 1));
+      roundInfoSorted[roundIdx].completed.forEach((group) => {
         computeCompetitorMap(group.competitors, group.ranking, competitorMap);
       });
+      console.log("getRankFromRoundInfo: from this round" + JSON.stringify(roundInfoSorted[roundIdx]));
       return Object.keys(competitorMap).sort((cId1, cId2) => (competitorMap[cId1] < competitorMap[cId2] ? 1 : -1));
     }
 

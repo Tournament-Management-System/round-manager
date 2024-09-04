@@ -9,11 +9,11 @@ export const startRounds = async (body) => {
 
   const { eventFormatId, tournamentStateId } = body;
 
-  const [eventFormat, competitors, tournamentState] = await Promise.all([
+  const [eventFormat, tournamentState] = await Promise.all([
     queries.getEventFormat(eventFormatId),
-    queries.getEventCompetitors(eventFormatId),
     queries.getTournamentStateEventStates(tournamentStateId)
   ]);
+  const competitors = await queries.getEventCompetitors(tournamentState.tournamentFormatId, eventFormatId);
 
   const { tournamentFormatId } = tournamentState;
   const eventStateInTournamentState = tournamentState?.eventState?.items?.find?.(
@@ -33,6 +33,9 @@ export const startRounds = async (body) => {
     awards: []
   };
   const queued = eventUtils.assignNextRound(eventFormat, rawEventState, competitors);
+  if (!queued) {
+    return respBuilder(400, { error: `queued is falsy: "${queued}"` });
+  }
   const eventState = await queries.createEventState(
     rawEventState.tournamentFormatId,
     rawEventState.tournamentStateId,
@@ -57,23 +60,28 @@ export const startRounds = async (body) => {
 };
 
 export const completeRound = async (body) => {
+  console.log("\ncompleteRound: call initiated");
   if (!body) return respBuilder(400, { error: `invalid request body - missing body` });
   if (!body.roundStateId) return respBuilder(400, { error: `invalid request body - missing roundStateId` });
 
+  console.log("\ncompleteRound: input validated\n" + JSON.stringify(body));
+
   const roundState = await queries.getRoundState(body.roundStateId);
+  console.log("\ncompleteRound: round state retrieved\n" + JSON.stringify(roundState));
   if (roundState.queued?.length !== 0 || roundState?.assigned?.length !== 0 || roundState?.started?.length !== 0) {
-    return respBuilder(400, { error: "round not finished - not all groups have completed" });
+    return respBuilder(400, { error: "round not finished - not all groups have completed", roundState });
   }
 
   const [eventState, eventFormat] = await Promise.all([
-    queries.getEventState(roundState.eventStateId),
+    queries.getEventStateWithRounds(roundState.eventStateId),
     queries.getEventFormat(roundState.eventFormatId)
   ]);
 
   if (eventState.currentRoundIdx === eventFormat.rounds.length - 1) {
     const awards = eventUtils.tabulateEventResults(eventFormat, eventState);
-    const newEventState = await queries.updateEventStateAward(roundState.id, awards, eventState._version);
-    await queries.completeEvent(roundState.eventFormatId, roundState.eventStateId);
+    console.log("completeRound: awards" + JSON.stringify(awards));
+    const newEventState = await queries.updateEventStateAward(eventState.id, awards, eventState._version);
+    await queries.completeEvent(roundState.eventStateId);
     return respBuilder(200, { roundState, eventState: newEventState });
   } else {
     const [competitors, eventRoundStates] = await Promise.all([
@@ -83,6 +91,7 @@ export const completeRound = async (body) => {
 
     const queued = eventUtils.assignNextRound(eventFormat, eventState, competitors, eventRoundStates);
     if (queued?.length) {
+      console.log("\ncompleteRound: start round state creation");
       const nextRoundState = await queries.createRoundStateWithQueued(
         roundState.tournamentFormatId,
         roundState.tournamentStateId,
@@ -90,8 +99,14 @@ export const completeRound = async (body) => {
         roundState.eventStateId,
         queued
       );
+      console.log("\ncompleteRound: new round state created\n" + JSON.stringify(nextRoundState));
+      const newEventState = await queries.updateEventStateIndex(
+        eventState.id,
+        eventState.currentRoundIdx,
+        eventState._version
+      );
       await queries.startGroups(nextRoundState.id);
-      return respBuilder(200, { roundState: nextRoundState, eventState });
+      return respBuilder(200, { roundState: nextRoundState, eventState: newEventState });
     }
     return respBuilder(400, { error: `unable to make assignment, queued is "${queued}"` });
   }
