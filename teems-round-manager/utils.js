@@ -48,7 +48,7 @@ export const tournamentMngrRequestMaker = async (path, body) => {
 
 export const roundMngrRequestMaker = async (path, body) => {
   try {
-    const request = new Request(`https://jfs89pe3s3.execute-api.us-east-1.amazonaws.com/prod/${path}`, {
+    const request = new Request(`https://oxsta0zfij.execute-api.us-east-1.amazonaws.com/prod/${path}`, {
       method: "POST",
       body: JSON.stringify(body)
     });
